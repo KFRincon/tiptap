@@ -8,25 +8,16 @@ import { NotionEditorHeader } from "../tiptap-templates/notion-like/notion-like-
 
 
 
-
-
-
 // Extensiones
 import { StarterKit } from "@tiptap/starter-kit"
-import { Mention } from "@tiptap/extension-mention"
 import { TaskList, TaskItem } from "@tiptap/extension-list"
 import { Color, TextStyle } from "@tiptap/extension-text-style"
-import { Placeholder, Selection } from "@tiptap/extensions"
-import { Collaboration, isChangeOrigin } from "@tiptap/extension-collaboration"
-import { CollaborationCaret } from "@tiptap/extension-collaboration-caret"
 import { Typography } from "@tiptap/extension-typography"
 import { Highlight } from "@tiptap/extension-highlight"
 import { Superscript } from "@tiptap/extension-superscript"
 import { Subscript } from "@tiptap/extension-subscript"
 import { TextAlign } from "@tiptap/extension-text-align"
 import { Mathematics } from "@tiptap/extension-mathematics"
-import { Ai } from "@tiptap-pro/extension-ai"
-import { UniqueID } from "@tiptap/extension-unique-id"
 import { Emoji, gitHubEmojis } from "@tiptap/extension-emoji"
 
 
@@ -74,8 +65,6 @@ export function EditorProvider() {
                 <NotionEditorHeader />
                 <EditorContentArea />
             </EditorContext.Provider>
-
-
         </div>
     )
 }

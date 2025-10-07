@@ -82,6 +82,7 @@ import type {
   NodeChangeData,
 } from "./drag-context-menu-types"
 import { useMenuActionVisibility } from "./drag-context-menu-hooks"
+import { useDragDropIndicator } from "./use-drag-drop-indicator"
 
 // Icons
 import { GripVerticalIcon } from "@/components/tiptap-icons/grip-vertical-icon"
@@ -473,6 +474,9 @@ export const DragContextMenu: React.FC<DragContextMenuProps> = ({
     hasImage,
   } = useMenuActionVisibility(editor)
 
+  // Hook para manejar indicadores de drop
+  useDragDropIndicator({ editor, isDragging })
+
   const dynamicPositions = React.useMemo(() => {
     return {
       middleware: [
@@ -499,15 +503,53 @@ export const DragContextMenu: React.FC<DragContextMenuProps> = ({
     }
   }, [editor])
 
-  const onElementDragStart = React.useCallback(() => {
-    if (!editor) return
-    editor.commands.setIsDragging(true)
-  }, [editor])
+  const onElementDrag = React.useCallback((event: DragEvent) => {
+    console.log('🔄 onDrag', {
+      node,
+      nodePos,
+      nodeType: node?.type.name,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      screenX: event.screenX,
+      screenY: event.screenY,
+    })
+  }, [node, nodePos])
 
-  const onElementDragEnd = React.useCallback(() => {
+  const onElementDragStart = React.useCallback((event: DragEvent) => {
     if (!editor) return
+    console.log('🚀 onDragStart', {
+      node,
+      nodePos,
+      nodeType: node?.type.name,
+      nodeContent: node?.textContent,
+      event,
+      editorState: editor.state.toJSON(),
+    })
+
+    // Agregar listener para onDrag
+    const target = event.target as HTMLElement
+    target.addEventListener('drag', onElementDrag as any)
+
+    editor.commands.setIsDragging(true)
+  }, [editor, node, nodePos, onElementDrag])
+
+  const onElementDragEnd = React.useCallback((event: DragEvent) => {
+    if (!editor) return
+    console.log('✅ onDragEnd', {
+      node,
+      nodePos,
+      nodeType: node?.type.name,
+      nodeContent: node?.textContent,
+      event,
+      editorState: editor.state.toJSON(),
+    })
+
+    // Remover listener de onDrag
+    const target = event.target as HTMLElement
+    target.removeEventListener('drag', onElementDrag as any)
+
     editor.commands.setIsDragging(false)
-  }, [editor])
+  }, [editor, node, nodePos, onElementDrag])
 
   if (!editor) return null
 
