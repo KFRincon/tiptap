@@ -504,15 +504,7 @@ export const DragContextMenu: React.FC<DragContextMenuProps> = ({
   }, [editor])
 
   const onElementDrag = React.useCallback((event: DragEvent) => {
-    console.log('🔄 onDrag', {
-      node,
-      nodePos,
-      nodeType: node?.type.name,
-      clientX: event.clientX,
-      clientY: event.clientY,
-      screenX: event.screenX,
-      screenY: event.screenY,
-    })
+
   }, [node, nodePos])
 
   const onElementDragStart = React.useCallback((event: DragEvent) => {

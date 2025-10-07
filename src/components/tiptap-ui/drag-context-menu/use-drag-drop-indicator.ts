@@ -10,10 +10,48 @@ export const useDragDropIndicator = ({
   editor,
   isDragging,
 }: DragDropIndicatorOptions) => {
+  const dragGhostRef = React.useRef<HTMLElement | null>(null)
+
   React.useEffect(() => {
     if (!editor || !isDragging) return
 
     const editorElement = editor.view.dom
+
+    const handleDragStart = (event: DragEvent) => {
+      const target = event.target as HTMLElement
+      const nodeElement = target.closest('[data-node-view-wrapper], .ProseMirror > *')
+
+      if (!nodeElement || !(nodeElement instanceof HTMLElement)) return
+
+      // Crear elemento de arrastre personalizado
+      const dragGhost = nodeElement.cloneNode(true) as HTMLElement
+      dragGhost.style.position = 'absolute'
+      dragGhost.style.top = '-9999px'
+      dragGhost.style.left = '-9999px'
+      dragGhost.style.opacity = '0.8'
+      dragGhost.style.pointerEvents = 'none'
+      dragGhost.style.zIndex = '9999'
+
+      document.body.appendChild(dragGhost)
+      dragGhostRef.current = dragGhost
+
+      // Establecer el drag image en la posición del cursor
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move'
+        const rect = nodeElement.getBoundingClientRect()
+        const offsetX = event.clientX - rect.left
+        const offsetY = event.clientY - rect.top
+        event.dataTransfer.setDragImage(dragGhost, offsetX, offsetY)
+      }
+    }
+
+    const handleDrag = (event: DragEvent) => {
+      // Actualizar posición del ghost element para seguir el cursor
+      if (dragGhostRef.current && event.clientX !== 0 && event.clientY !== 0) {
+        dragGhostRef.current.style.top = `${event.clientY + 10}px`
+        dragGhostRef.current.style.left = `${event.clientX + 10}px`
+      }
+    }
 
     const handleDragOver = (event: DragEvent) => {
       event.preventDefault()
@@ -26,10 +64,22 @@ export const useDragDropIndicator = ({
 
       if (!nodeElement || !(nodeElement instanceof HTMLElement)) return
 
+      // Obtener la posición del nodo en el documento de TipTap
+      const pos = editor.view.posAtDOM(nodeElement, 0)
+      const $pos = editor.state.doc.resolve(pos)
+      const node = $pos.node()
+
+      // Obtener identificador del nodo
+      const nodeId = node.attrs?.id || `node-${pos}` // Usar ID del nodo o posición como fallback
+
       console.log('🎯 dragover', {
         target: nodeElement,
         nodeName: nodeElement.nodeName,
         classList: Array.from(nodeElement.classList),
+        nodeId: nodeId,
+        nodePos: pos,
+        nodeType: node.type.name,
+        nodeAttrs: node.attrs,
         clientY: event.clientY,
         elementTop: nodeElement.getBoundingClientRect().top,
         elementBottom: nodeElement.getBoundingClientRect().bottom,
@@ -60,18 +110,15 @@ export const useDragDropIndicator = ({
 
       const minDistance = Math.min(distanceTop, distanceBottom, distanceLeft, distanceRight)
 
-      if (minDistance === distanceTop) {
-        nodeElement.classList.add('drop-indicator-top')
-        console.log('📍 Indicador arriba del elemento')
-      } else if (minDistance === distanceBottom) {
-        nodeElement.classList.add('drop-indicator-bottom')
-        console.log('📍 Indicador abajo del elemento')
-      } else if (minDistance === distanceLeft) {
+      // Definir zona de detección lateral (por ejemplo, 50px desde el borde)
+      const lateralThreshold = 50
+
+      if (minDistance === distanceLeft && distanceLeft <= lateralThreshold) {
         nodeElement.classList.add('drop-indicator-left')
-        console.log('📍 Indicador a la izquierda del elemento')
-      } else {
+        console.log('📍 Indicador a la izquierda del elemento', { distanceLeft })
+      } else if (minDistance === distanceRight && distanceRight <= lateralThreshold) {
         nodeElement.classList.add('drop-indicator-right')
-        console.log('📍 Indicador a la derecha del elemento')
+        console.log('📍 Indicador a la derecha del elemento', { distanceRight })
       }
     }
 
@@ -130,9 +177,17 @@ export const useDragDropIndicator = ({
           'drop-indicator-right'
         )
       })
+
+      // Limpiar el elemento ghost
+      if (dragGhostRef.current) {
+        document.body.removeChild(dragGhostRef.current)
+        dragGhostRef.current = null
+      }
     }
 
     // Agregar event listeners
+    editorElement.addEventListener('dragstart', handleDragStart as EventListener)
+    editorElement.addEventListener('drag', handleDrag as EventListener)
     editorElement.addEventListener('dragover', handleDragOver as EventListener)
     editorElement.addEventListener('dragleave', handleDragLeave as EventListener)
     editorElement.addEventListener('drop', handleDrop as EventListener)
@@ -140,6 +195,8 @@ export const useDragDropIndicator = ({
 
     return () => {
       // Cleanup
+      editorElement.removeEventListener('dragstart', handleDragStart as EventListener)
+      editorElement.removeEventListener('drag', handleDrag as EventListener)
       editorElement.removeEventListener('dragover', handleDragOver as EventListener)
       editorElement.removeEventListener('dragleave', handleDragLeave as EventListener)
       editorElement.removeEventListener('drop', handleDrop as EventListener)
