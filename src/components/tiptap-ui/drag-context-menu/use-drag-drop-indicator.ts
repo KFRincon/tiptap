@@ -102,23 +102,39 @@ export const useDragDropIndicator = ({
       // Agregar nuevo indicador basado en la posición
       nodeElement.classList.add('drop-indicator')
 
-      // Determinar qué lado está más cerca
-      const distanceTop = Math.abs(event.clientY - rect.top)
-      const distanceBottom = Math.abs(event.clientY - rect.bottom)
-      const distanceLeft = Math.abs(event.clientX - rect.left)
-      const distanceRight = Math.abs(event.clientX - rect.right)
+      // Definir zonas específicas en píxeles desde cada borde
+      const horizontalMargin = 150 // Zona lateral de 150px desde izquierda/derecha
+      const verticalMargin = 30    // Zona superior/inferior de 30px desde arriba/abajo
 
-      const minDistance = Math.min(distanceTop, distanceBottom, distanceLeft, distanceRight)
+      // Calcular posición relativa dentro del elemento
+      const relativeX = event.clientX - rect.left
+      const relativeY = event.clientY - rect.top
 
-      // Definir zona de detección lateral (por ejemplo, 50px desde el borde)
-      const lateralThreshold = 50
+      // Determinar en qué zona está el cursor
+      const isInLeftZone = relativeX <= horizontalMargin
+      const isInRightZone = relativeX >= rect.width - horizontalMargin
+      const isInTopZone = relativeY <= verticalMargin
+      const isInBottomZone = relativeY >= rect.height - verticalMargin
 
-      if (minDistance === distanceLeft && distanceLeft <= lateralThreshold) {
+      console.log('🎯 Zonas detectadas', {
+        relativeX,
+        relativeY,
+        width: rect.width,
+        height: rect.height,
+        horizontalMargin,
+        isInLeftZone,
+        isInRightZone,
+        isInTopZone,
+        isInBottomZone,
+      })
+
+      // Prioridad: laterales primero, luego verticales
+      if (isInLeftZone) {
         nodeElement.classList.add('drop-indicator-left')
-        console.log('📍 Indicador a la izquierda del elemento', { distanceLeft })
-      } else if (minDistance === distanceRight && distanceRight <= lateralThreshold) {
+        console.log('📍 Indicador a la izquierda del elemento')
+      } else if (isInRightZone) {
         nodeElement.classList.add('drop-indicator-right')
-        console.log('📍 Indicador a la derecha del elemento', { distanceRight })
+        console.log('📍 Indicador a la derecha del elemento')
       }
     }
 
